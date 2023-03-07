@@ -1,9 +1,11 @@
 #[macro_use]
 extern crate pest_derive;
 
+mod generate;
 mod model;
 mod parser;
 
+use crate::generate::generate_file;
 use crate::parser::parse_file;
 use clap::{Parser, ValueEnum};
 use std::io::Result;
@@ -28,6 +30,8 @@ fn main() -> Result<()> {
 
     let changelog = parse_file("CHANGELOG.md")?;
     println!("{changelog:#?}");
+
+    generate_file("CHANGELOG.new.md", &changelog)?;
 
     Ok(())
 }
