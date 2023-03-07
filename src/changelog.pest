@@ -1,0 +1,47 @@
+Changelog = {
+    SOI ~
+    Intro ~
+    UnreleasedVersion? ~
+    Version* ~
+    Reference* ~
+    EOI
+}
+
+Intro = { (H1 | Par)* }
+
+UnreleasedVersion = { UnreleasedVersionHeading ~ VersionIntro ~ Section* }
+UnreleasedVersionHeading = { H2Opening ~ WS ~ "[Unreleased]" ~ NEWLINE+ }
+Version = { VersionHeading ~ VersionIntro ~ Section* }
+VersionHeading = { H2Opening ~ WS ~ Bracket ~ WS ~ "-" ~ WS ~ Date ~ NEWLINE+ }
+Date = { '0'..'9'{4} ~ "-" ~ '0'..'9'{2} ~ "-" ~ '0'..'9'{2} }
+VersionIntro = { Par* }
+
+Section = { SectionHeading ~ Bullets }
+SectionHeading = { H3Opening ~ WS ~ Text ~ NEWLINE+ }
+Bullets = { Bullet* ~ NEWLINE+ }
+Bullet = { BulletStart ~ BulletCont* }
+BulletStart = { BulletPoint ~ WS ~ Text ~ NEWLINE }
+BulletPoint = _{ "-" | "*" | "+" }
+BulletCont = { WS ~ Text ~ NEWLINE }
+
+H1 = { H1Opening ~ WS ~ Text ~ NEWLINE+ }
+H1Opening = _{ "#" }
+H2Opening = _{ "##" }
+H3Opening = _{ "###" }
+
+Par = { Lines ~ NEWLINE+ }
+Lines = { Line+ }
+Line = { Text ~ NEWLINE }
+
+Reference = { Bracket ~ ": " ~ Text ~ NEWLINE }
+Bracket = { LBracket ~ BracketText ~ RBracket }
+LBracket = _{ "[" }
+RBracket = _{ "]" }
+BracketText = @{ BracketChar+ }
+BracketChar = { ASCII_ALPHANUMERIC | "." | "," | "-" | "_" | "/" | " " | ":" }
+
+Text = @{ NoHash ~ Char* }
+NoHash = { LETTER | NUMBER | SYMBOL | "\"" }
+Char = { LETTER | NUMBER | PUNCTUATION | SYMBOL | " " }
+
+WS = _{ (" " | "\t")+ }
