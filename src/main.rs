@@ -1,3 +1,5 @@
+mod model;
+
 use clap::{Parser, ValueEnum};
 
 #[derive(Parser, Debug)]
