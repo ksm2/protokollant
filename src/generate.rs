@@ -28,7 +28,7 @@ pub fn generate_str(model: &Changelog) -> String {
         } else {
             str.push_str(&format!("## [{version}]\n\n"));
         }
-        str.push_str(&intro);
+        str.push_str(intro);
 
         generate_section(&mut str, "Added", added);
         generate_section(&mut str, "Fixed", fixed);
@@ -52,7 +52,7 @@ fn generate_section(target: &mut String, heading: &str, items: &Vec<String>) {
     target.push_str(&format!("### {heading}\n\n"));
     for item in items {
         let bullet = "- ".to_string()
-            + &item
+            + item
                 .lines()
                 .fold(String::new(), |a, b| a + "\n  " + b)
                 .trim_start()
