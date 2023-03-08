@@ -1,5 +1,13 @@
+use clap::ValueEnum;
 use semver::Version as SemVer;
 use std::fmt::{Debug, Display, Formatter};
+
+#[derive(ValueEnum, Debug, Copy, Clone)]
+pub enum Change {
+    Major,
+    Minor,
+    Patch,
+}
 
 #[derive(Clone, Debug, PartialEq, Eq, Default)]
 pub struct Changelog {
@@ -15,6 +23,40 @@ impl Changelog {
             releases: Vec::new(),
             refs: Vec::new(),
         }
+    }
+
+    pub fn bump(&mut self, change: Change) {
+        if let Some(latest_version) = self.version() {
+            if let Some(unreleased) = self.unreleased() {
+                let new_version = Self::bump_version(latest_version, change);
+                unreleased.version = Version::Released(new_version);
+            }
+        }
+    }
+
+    fn bump_version(version: SemVer, change: Change) -> SemVer {
+        match change {
+            Change::Major => SemVer::new(version.major + 1, 0, 0),
+            Change::Minor => SemVer::new(version.major, version.minor + 1, 0),
+            Change::Patch => SemVer::new(version.major, version.minor, version.patch + 1),
+        }
+    }
+
+    pub fn version(&self) -> Option<SemVer> {
+        self.releases
+            .iter()
+            .filter_map(|r| match &r.version {
+                Version::Unreleased => None,
+                Version::Released(s) => Some(s),
+            })
+            .max()
+            .cloned()
+    }
+
+    pub fn unreleased(&mut self) -> Option<&mut Release> {
+        self.releases
+            .iter_mut()
+            .find(|r| matches!(r.version, Version::Unreleased))
     }
 }
 

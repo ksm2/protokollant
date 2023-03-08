@@ -8,8 +8,9 @@ mod parser;
 
 use crate::diff::diff_changelogs;
 use crate::generate::generate_str;
+use crate::model::Change;
 use crate::parser::parse_str;
-use clap::{Parser, ValueEnum};
+use clap::Parser;
 use std::fs::{read_to_string, write};
 use std::io::Result;
 
@@ -23,18 +24,13 @@ struct Args {
     diff: bool,
 }
 
-#[derive(ValueEnum, Debug, Copy, Clone)]
-enum Change {
-    Major,
-    Minor,
-    Patch,
-}
-
 fn main() -> Result<()> {
     let args = Args::parse();
 
     let changelog_str = read_to_string("CHANGELOG.md")?;
-    let changelog = parse_str(&changelog_str);
+    let mut changelog = parse_str(&changelog_str);
+
+    changelog.bump(args.change);
 
     let new_str = generate_str(&changelog);
 
