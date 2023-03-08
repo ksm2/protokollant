@@ -1,13 +1,16 @@
 #[macro_use]
 extern crate pest_derive;
 
+mod diff;
 mod generate;
 mod model;
 mod parser;
 
-use crate::generate::generate_file;
-use crate::parser::parse_file;
+use crate::diff::diff_changelogs;
+use crate::generate::generate_str;
+use crate::parser::parse_str;
 use clap::{Parser, ValueEnum};
+use std::fs::{read_to_string, write};
 use std::io::Result;
 
 #[derive(Parser, Debug)]
@@ -15,6 +18,9 @@ use std::io::Result;
 struct Args {
     #[arg(value_enum)]
     change: Change,
+
+    #[arg(long)]
+    diff: bool,
 }
 
 #[derive(ValueEnum, Debug, Copy, Clone)]
@@ -26,12 +32,18 @@ enum Change {
 
 fn main() -> Result<()> {
     let args = Args::parse();
-    println!("{args:?}");
 
-    let changelog = parse_file("CHANGELOG.md")?;
-    println!("{changelog:#?}");
+    let changelog_str = read_to_string("CHANGELOG.md")?;
+    let changelog = parse_str(&changelog_str);
 
-    generate_file("CHANGELOG.new.md", &changelog)?;
+    let new_str = generate_str(&changelog);
+
+    if args.diff {
+        let changes = diff_changelogs("CHANGELOG.md", &changelog_str, &new_str);
+        std::process::exit(if changes { 1 } else { 0 });
+    } else {
+        write("CHANGELOG.md", &new_str)?;
+    }
 
     Ok(())
 }

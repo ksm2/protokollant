@@ -1,12 +1,4 @@
 use crate::model::{Changelog, Ref, Release};
-use std::fs::write;
-use std::io::Result;
-
-pub fn generate_file(filename: &str, model: &Changelog) -> Result<()> {
-    let str = generate_str(model);
-    write(filename, str)?;
-    Ok(())
-}
 
 pub fn generate_str(model: &Changelog) -> String {
     let mut str = String::new();

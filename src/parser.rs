@@ -2,17 +2,10 @@ use crate::model::{Changelog, Ref, Release, Version};
 use pest::iterators::Pair;
 use pest::Parser;
 use semver::Version as SemVer;
-use std::fs::read_to_string;
-use std::io::Result;
 
 #[derive(Parser)]
 #[grammar = "changelog.pest"]
 struct ChangelogParser;
-
-pub fn parse_file(filename: &str) -> Result<Changelog> {
-    let content = read_to_string(filename)?;
-    Ok(parse_str(&content))
-}
 
 pub fn parse_str(content: &str) -> Changelog {
     let mut changelog = Changelog::new();
