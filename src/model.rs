@@ -1,3 +1,6 @@
+use semver::Version as SemVer;
+use std::fmt::{Debug, Display, Formatter};
+
 #[derive(Clone, Debug, PartialEq, Eq, Default)]
 pub struct Changelog {
     pub intro: String,
@@ -17,13 +20,29 @@ impl Changelog {
 
 #[derive(Clone, Debug, PartialEq, Eq, Default)]
 pub struct Release {
-    pub version: String,
+    pub version: Version,
     pub date: Option<String>,
     pub intro: String,
     pub added: Vec<String>,
     pub removed: Vec<String>,
     pub fixed: Vec<String>,
     pub changed: Vec<String>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Default)]
+pub enum Version {
+    #[default]
+    Unreleased,
+    Released(SemVer),
+}
+
+impl Display for Version {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Version::Unreleased => f.write_str("Unreleased"),
+            Version::Released(v) => Display::fmt(v, f),
+        }
+    }
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Default)]

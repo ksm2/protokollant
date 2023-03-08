@@ -1,6 +1,7 @@
-use crate::model::{Changelog, Ref, Release};
+use crate::model::{Changelog, Ref, Release, Version};
 use pest::iterators::Pair;
 use pest::Parser;
+use semver::Version as SemVer;
 use std::fs::read_to_string;
 use std::io::Result;
 
@@ -63,7 +64,7 @@ fn parse_release(release_rules: Pair<Rule>) -> Release {
                 v.intro = line.as_str().into();
             }
             Rule::UnreleasedHeading => {
-                v.version = "unreleased".into();
+                v.version = Version::Unreleased;
             }
             Rule::ReleaseHeading => {
                 let mut inner_rules = line.into_inner();
@@ -76,7 +77,7 @@ fn parse_release(release_rules: Pair<Rule>) -> Release {
                     .as_str();
                 let date = inner_rules.next().unwrap().as_str();
 
-                v.version = version.into();
+                v.version = Version::Released(SemVer::parse(version).unwrap());
                 v.date = Some(date.into());
             }
             Rule::Section => {
