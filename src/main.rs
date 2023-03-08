@@ -30,15 +30,21 @@ fn main() -> Result<()> {
     let changelog_str = read_to_string("CHANGELOG.md")?;
     let mut changelog = parse_str(&changelog_str);
 
-    changelog.bump(args.change);
+    let bumped = changelog.bump(args.change);
+    if !bumped {
+        eprintln!("No changes to release");
+    }
 
     let new_str = generate_str(&changelog);
 
     if args.diff {
-        let changes = diff_changelogs("CHANGELOG.md", &changelog_str, &new_str);
-        std::process::exit(if changes { 1 } else { 0 });
-    } else {
+        diff_changelogs("CHANGELOG.md", &changelog_str, &new_str);
+    } else if bumped {
         write("CHANGELOG.md", &new_str)?;
+    }
+
+    if !bumped {
+        std::process::exit(1);
     }
 
     Ok(())

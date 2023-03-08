@@ -26,14 +26,16 @@ impl Changelog {
         }
     }
 
-    pub fn bump(&mut self, change: Change) {
+    pub fn bump(&mut self, change: Change) -> bool {
         if let Some(latest_version) = self.version() {
             if let Some(unreleased) = self.unreleased() {
                 let new_version = Self::bump_version(latest_version, change);
                 unreleased.version = Version::Released(new_version);
-                unreleased.date = Some(OffsetDateTime::now_local().unwrap().date())
+                unreleased.date = Some(OffsetDateTime::now_local().unwrap().date());
+                return true;
             }
         }
+        false
     }
 
     fn bump_version(version: SemVer, change: Change) -> SemVer {
