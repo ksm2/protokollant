@@ -33,7 +33,7 @@ Par = { Lines ~ NEWLINE+ }
 Lines = { Line+ }
 Line = { Text ~ NEWLINE }
 
-Reference = { Bracket ~ ": " ~ Text ~ NEWLINE }
+Reference = { Bracket ~ ": " ~ Text ~ NEWLINE+ }
 Bracket = { LBracket ~ BracketText ~ RBracket }
 LBracket = _{ "[" }
 RBracket = _{ "]" }
