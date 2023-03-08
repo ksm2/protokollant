@@ -2,6 +2,8 @@ use crate::model::{Changelog, Ref, Release, Version};
 use pest::iterators::Pair;
 use pest::Parser;
 use semver::Version as SemVer;
+use time::format_description::well_known::Iso8601;
+use time::Date;
 
 #[derive(Parser)]
 #[grammar = "changelog.pest"]
@@ -71,7 +73,7 @@ fn parse_release(release_rules: Pair<Rule>) -> Release {
                 let date = inner_rules.next().unwrap().as_str();
 
                 v.version = Version::Released(SemVer::parse(version).unwrap());
-                v.date = Some(date.into());
+                v.date = Some(Date::parse(date, &Iso8601::DEFAULT).unwrap());
             }
             Rule::Section => {
                 let mut inner_rules = line.into_inner();

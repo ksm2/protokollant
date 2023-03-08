@@ -1,6 +1,7 @@
 use clap::ValueEnum;
 use semver::Version as SemVer;
 use std::fmt::{Debug, Display, Formatter};
+use time::{Date, OffsetDateTime};
 
 #[derive(ValueEnum, Debug, Copy, Clone)]
 pub enum Change {
@@ -30,6 +31,7 @@ impl Changelog {
             if let Some(unreleased) = self.unreleased() {
                 let new_version = Self::bump_version(latest_version, change);
                 unreleased.version = Version::Released(new_version);
+                unreleased.date = Some(OffsetDateTime::now_local().unwrap().date())
             }
         }
     }
@@ -63,7 +65,7 @@ impl Changelog {
 #[derive(Clone, Debug, PartialEq, Eq, Default)]
 pub struct Release {
     pub version: Version,
-    pub date: Option<String>,
+    pub date: Option<Date>,
     pub intro: String,
     pub added: Vec<String>,
     pub removed: Vec<String>,
