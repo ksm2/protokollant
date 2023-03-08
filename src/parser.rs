@@ -1,4 +1,4 @@
-use crate::model::{Changelog, Ref, Version};
+use crate::model::{Changelog, Ref, Release};
 use pest::iterators::Pair;
 use pest::Parser;
 use std::fs::read_to_string;
@@ -24,13 +24,13 @@ pub fn parse_str(content: &str) -> Changelog {
             Rule::Intro => {
                 changelog.intro = line.as_str().into();
             }
-            Rule::UnreleasedVersion => {
-                let version = parse_version(line);
-                changelog.versions.push(version);
+            Rule::Unreleased => {
+                let version = parse_release(line);
+                changelog.releases.push(version);
             }
-            Rule::Version => {
-                let version = parse_version(line);
-                changelog.versions.push(version);
+            Rule::Release => {
+                let version = parse_release(line);
+                changelog.releases.push(version);
             }
             Rule::Reference => {
                 let mut inner_rules = line.into_inner();
@@ -55,17 +55,17 @@ pub fn parse_str(content: &str) -> Changelog {
     changelog
 }
 
-fn parse_version(version_pair: Pair<Rule>) -> Version {
-    let mut v = Version::default();
-    for line in version_pair.into_inner() {
+fn parse_release(release_rules: Pair<Rule>) -> Release {
+    let mut v = Release::default();
+    for line in release_rules.into_inner() {
         match line.as_rule() {
-            Rule::VersionIntro => {
+            Rule::ReleaseIntro => {
                 v.intro = line.as_str().into();
             }
-            Rule::UnreleasedVersionHeading => {
+            Rule::UnreleasedHeading => {
                 v.version = "unreleased".into();
             }
-            Rule::VersionHeading => {
+            Rule::ReleaseHeading => {
                 let mut inner_rules = line.into_inner();
                 let version = inner_rules
                     .next()

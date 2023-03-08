@@ -1,7 +1,7 @@
 #[derive(Clone, Debug, PartialEq, Eq, Default)]
 pub struct Changelog {
     pub intro: String,
-    pub versions: Vec<Version>,
+    pub releases: Vec<Release>,
     pub refs: Vec<Ref>,
 }
 
@@ -9,14 +9,14 @@ impl Changelog {
     pub fn new() -> Self {
         Self {
             intro: String::new(),
-            versions: Vec::new(),
+            releases: Vec::new(),
             refs: Vec::new(),
         }
     }
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Default)]
-pub struct Version {
+pub struct Release {
     pub version: String,
     pub date: Option<String>,
     pub intro: String,

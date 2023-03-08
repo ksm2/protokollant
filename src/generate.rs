@@ -1,4 +1,4 @@
-use crate::model::{Changelog, Ref, Version};
+use crate::model::{Changelog, Ref, Release};
 use std::fs::write;
 use std::io::Result;
 
@@ -13,8 +13,8 @@ pub fn generate_str(model: &Changelog) -> String {
 
     str.push_str(&model.intro);
 
-    for version in &model.versions {
-        let Version {
+    for release in &model.releases {
+        let Release {
             version,
             date,
             intro,
@@ -22,7 +22,7 @@ pub fn generate_str(model: &Changelog) -> String {
             removed,
             changed,
             fixed,
-        } = version;
+        } = release;
         if let Some(date) = date {
             str.push_str(&format!("## [{version}] - {date}\n\n"));
         } else {
