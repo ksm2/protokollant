@@ -1,5 +1,6 @@
 use colored::Colorize;
 use itertools::Itertools;
+use std::io::{Result, Write};
 
 #[derive(Debug, Clone)]
 pub struct FileDiff {
@@ -21,39 +22,40 @@ impl FileDiff {
 
 struct DiffEntry<T>(usize, usize, usize, usize, Vec<diff::Result<T>>);
 
-pub fn diff_files(file_diffs: &[FileDiff]) {
+pub fn diff_files<W: Write>(w: &mut W, file_diffs: &[FileDiff]) -> Result<()> {
     for diff in file_diffs {
-        diff_file(diff);
+        diff_file(w, diff)?;
     }
+    Ok(())
 }
 
-pub fn diff_file(file_diff: &FileDiff) -> bool {
+pub fn diff_file<W: Write>(w: &mut W, file_diff: &FileDiff) -> Result<()> {
     let lines = diff::lines(file_diff.left.trim_end(), file_diff.right.trim_end());
     let changed_lines = get_changed_lines(&lines);
 
     if changed_lines.is_empty() {
-        return false;
+        return Ok(());
     }
 
     let filename = &file_diff.filename;
-    println!("{}", format!("--- {filename} before").bold());
-    println!("{}", format!("+++ {filename} after").bold());
+    writeln!(w, "{}", format!("--- {filename} before").bold())?;
+    writeln!(w, "{}", format!("+++ {filename} after").bold())?;
     let changed_groups = group_changes(changed_lines, lines.len());
     let changed_groups = with_diff(changed_groups, lines);
 
     for DiffEntry(from1, count1, from2, count2, lines) in changed_groups {
         let string = format!("@@ -{from1},{count1} +{from2},{count2} @@").cyan();
-        println!("{}", string);
+        writeln!(w, "{}", string)?;
         for line in lines {
             match line {
-                diff::Result::Left(l) => println!("{}{}", "-".red(), l.red()),
-                diff::Result::Both(l, _) => println!(" {}", l),
-                diff::Result::Right(r) => println!("{}{}", "+".green(), r.green()),
+                diff::Result::Left(l) => writeln!(w, "{}{}", "-".red(), l.red())?,
+                diff::Result::Both(l, _) => writeln!(w, " {}", l)?,
+                diff::Result::Right(r) => writeln!(w, "{}{}", "+".green(), r.green())?,
             }
         }
     }
 
-    true
+    Ok(())
 }
 
 fn get_changed_lines(lines: &[diff::Result<&str>]) -> Vec<usize> {

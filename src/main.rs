@@ -14,7 +14,7 @@ use crate::model::Change;
 use crate::parser::parse_str;
 use clap::Parser;
 use std::fs::{read_to_string, write};
-use std::io::Result;
+use std::io::{stderr, stdout, Result, Write};
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
@@ -53,10 +53,18 @@ fn main() -> Result<()> {
     let file_diff = FileDiff::new("CHANGELOG.md", changelog_str, new_str.clone());
     diffs.push(file_diff);
 
-    diff_files(&diffs);
+    let mut writer: Box<dyn Write> = if args.diff {
+        Box::new(stdout())
+    } else {
+        Box::new(stderr())
+    };
+    diff_files(&mut writer, &diffs)?;
 
     if bumped && !args.diff {
         write("CHANGELOG.md", &new_str)?;
+
+        let new_version = changelog.version().unwrap();
+        println!("v{}", new_version);
     }
 
     if !bumped {
