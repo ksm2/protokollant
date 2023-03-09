@@ -1,5 +1,6 @@
 use crate::diff::FileDiff;
 use semver::Version;
+use std::fmt::{Display, Formatter};
 use std::fs::read_to_string;
 use std::io::Result;
 use std::path::Path;
@@ -26,6 +27,14 @@ impl ManifestType {
 
         let diff = FileDiff::new("Cargo.toml", old_toml, new_toml);
         Ok(diff)
+    }
+}
+
+impl Display for ManifestType {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            ManifestType::Cargo => f.write_str("Rust (Cargo.toml)"),
+        }
     }
 }
 

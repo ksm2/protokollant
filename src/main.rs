@@ -38,9 +38,11 @@ fn main() -> Result<()> {
         eprintln!("No changes to release");
     } else {
         let new_version = changelog.version().unwrap();
+        eprintln!("Releasing new version {}", new_version);
 
         let manifest_types = detect_manifests()?;
         for manifest_type in manifest_types {
+            eprintln!("Detected {}", manifest_type);
             let diff = manifest_type.change_version(&new_version)?;
             diffs.push(diff);
         }
@@ -48,12 +50,12 @@ fn main() -> Result<()> {
 
     let new_str = generate_str(&changelog);
 
-    if args.diff {
-        let file_diff = FileDiff::new("CHANGELOG.md", changelog_str, new_str);
-        diffs.push(file_diff);
+    let file_diff = FileDiff::new("CHANGELOG.md", changelog_str, new_str.clone());
+    diffs.push(file_diff);
 
-        diff_files(&diffs);
-    } else if bumped {
+    diff_files(&diffs);
+
+    if bumped && !args.diff {
         write("CHANGELOG.md", &new_str)?;
     }
 
