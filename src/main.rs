@@ -43,7 +43,7 @@ fn main() -> Result<()> {
         let manifest_types = detect_manifests()?;
         for manifest_type in manifest_types {
             eprintln!("Detected {}", manifest_type);
-            let diff = manifest_type.change_version(&new_version)?;
+            let diff = manifest_type.change_version(&new_version, !args.diff)?;
             diffs.push(diff);
         }
     }

@@ -1,7 +1,7 @@
 use crate::diff::FileDiff;
 use semver::Version;
 use std::fmt::{Display, Formatter};
-use std::fs::read_to_string;
+use std::fs::{read_to_string, write};
 use std::io::Result;
 use std::path::Path;
 use toml::{to_string_pretty, Table, Value};
@@ -12,18 +12,21 @@ pub enum ManifestType {
 }
 
 impl ManifestType {
-    pub fn change_version(&self, version: &Version) -> Result<FileDiff> {
+    pub fn change_version(&self, version: &Version, do_write: bool) -> Result<FileDiff> {
         match self {
-            ManifestType::Cargo => self.change_cargo_version(version),
+            ManifestType::Cargo => self.change_cargo_version(version, do_write),
         }
     }
 
-    fn change_cargo_version(&self, version: &Version) -> Result<FileDiff> {
+    fn change_cargo_version(&self, version: &Version, do_write: bool) -> Result<FileDiff> {
         let old_toml = read_to_string("Cargo.toml")?;
         let mut manifest = old_toml.parse::<Table>().unwrap();
         let package = manifest["package"].as_table_mut().unwrap();
         package["version"] = Value::String(version.to_string());
         let new_toml = to_string_pretty(&manifest).unwrap();
+        if do_write {
+            write("Cargo.toml", &new_toml)?;
+        }
 
         let diff = FileDiff::new("Cargo.toml", old_toml, new_toml);
         Ok(diff)
