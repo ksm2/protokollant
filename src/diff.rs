@@ -1,16 +1,38 @@
 use colored::Colorize;
 use itertools::Itertools;
 
+#[derive(Debug, Clone)]
+pub struct FileDiff<'a> {
+    filename: &'a str,
+    left: &'a str,
+    right: &'a str,
+}
+
+impl<'a> FileDiff<'a> {
+    pub fn new(filename: &'a str, left: &'a str, right: &'a str) -> Self {
+        Self {
+            filename,
+            left,
+            right,
+        }
+    }
+}
+
 struct DiffEntry<T>(usize, usize, usize, usize, Vec<diff::Result<T>>);
 
-pub fn diff_changelogs(filename: &str, left: &str, right: &str) -> bool {
-    let lines = diff::lines(left.trim_end(), right.trim_end());
+pub fn diff_files(file_diffs: &[&FileDiff]) -> bool {
+    file_diffs.iter().map(|d| diff_file(d)).any(|b| b)
+}
+
+pub fn diff_file(file_diff: &FileDiff) -> bool {
+    let lines = diff::lines(file_diff.left.trim_end(), file_diff.right.trim_end());
     let changed_lines = get_changed_lines(&lines);
 
     if changed_lines.is_empty() {
         return false;
     }
 
+    let filename = file_diff.filename;
     println!("{}", format!("--- {filename} before").bold());
     println!("{}", format!("+++ {filename} after").bold());
     let changed_groups = group_changes(changed_lines, lines.len());

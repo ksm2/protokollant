@@ -6,7 +6,7 @@ mod generate;
 mod model;
 mod parser;
 
-use crate::diff::diff_changelogs;
+use crate::diff::{diff_file, FileDiff};
 use crate::generate::generate_str;
 use crate::model::Change;
 use crate::parser::parse_str;
@@ -38,7 +38,8 @@ fn main() -> Result<()> {
     let new_str = generate_str(&changelog);
 
     if args.diff {
-        diff_changelogs("CHANGELOG.md", &changelog_str, &new_str);
+        let file_diff = FileDiff::new("CHANGELOG.md", &changelog_str, &new_str);
+        diff_file(&file_diff);
     } else if bumped {
         write("CHANGELOG.md", &new_str)?;
     }
