@@ -2,14 +2,15 @@ use colored::Colorize;
 use itertools::Itertools;
 
 #[derive(Debug, Clone)]
-pub struct FileDiff<'a> {
-    filename: &'a str,
-    left: &'a str,
-    right: &'a str,
+pub struct FileDiff {
+    filename: String,
+    left: String,
+    right: String,
 }
 
-impl<'a> FileDiff<'a> {
-    pub fn new(filename: &'a str, left: &'a str, right: &'a str) -> Self {
+impl FileDiff {
+    pub fn new(filename: impl Into<String>, left: String, right: String) -> Self {
+        let filename = filename.into();
         Self {
             filename,
             left,
@@ -20,8 +21,10 @@ impl<'a> FileDiff<'a> {
 
 struct DiffEntry<T>(usize, usize, usize, usize, Vec<diff::Result<T>>);
 
-pub fn diff_files(file_diffs: &[&FileDiff]) -> bool {
-    file_diffs.iter().map(|d| diff_file(d)).any(|b| b)
+pub fn diff_files(file_diffs: &[FileDiff]) {
+    for diff in file_diffs {
+        diff_file(diff);
+    }
 }
 
 pub fn diff_file(file_diff: &FileDiff) -> bool {
@@ -32,7 +35,7 @@ pub fn diff_file(file_diff: &FileDiff) -> bool {
         return false;
     }
 
-    let filename = file_diff.filename;
+    let filename = &file_diff.filename;
     println!("{}", format!("--- {filename} before").bold());
     println!("{}", format!("+++ {filename} after").bold());
     let changed_groups = group_changes(changed_lines, lines.len());

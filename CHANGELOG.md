@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Generate changelog files
 - Version bump using `major`, `minor` or `patch`
 - Option to display `--diff`
+- Bump `Cargo.toml` on release
 
 ## [0.1.0] - 2023-03-05
 

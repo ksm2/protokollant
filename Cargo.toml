@@ -14,3 +14,4 @@ pest = "2.5"
 pest_derive = "2.5"
 semver = "1.0"
 time = { version = "0.3.20", features = ["parsing", "local-offset"] }
+toml = { version = "0.7.2", features = ["preserve_order"] }
