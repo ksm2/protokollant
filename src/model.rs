@@ -29,16 +29,29 @@ impl Changelog {
     pub fn bump(&mut self, change: Change) -> bool {
         if let Some(latest_version) = self.version() {
             if let Some(unreleased) = self.unreleased() {
-                let new_version = Self::bump_version(latest_version, change);
-                unreleased.version = Version::Released(new_version);
+                let new_version = Self::bump_version(&latest_version, change);
+                unreleased.version = Version::Released(new_version.clone());
                 unreleased.date = Some(OffsetDateTime::now_local().unwrap().date());
+
+                if let Some(mut old_ref) = self.refs.first_mut() {
+                    let old_version_string = latest_version.to_string();
+                    let version_string = new_version.to_string();
+                    let href = old_ref.href.clone();
+                    old_ref.href = href.replace(&old_version_string, &version_string);
+
+                    let new_ref = Ref::new(
+                        version_string,
+                        href.replace("HEAD", &format!("v{new_version}")),
+                    );
+                    self.refs.insert(1, new_ref);
+                }
                 return true;
             }
         }
         false
     }
 
-    fn bump_version(version: SemVer, change: Change) -> SemVer {
+    fn bump_version(version: &SemVer, change: Change) -> SemVer {
         match change {
             Change::Major => SemVer::new(version.major + 1, 0, 0),
             Change::Minor => SemVer::new(version.major, version.minor + 1, 0),
