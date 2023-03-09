@@ -1,0 +1,71 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: "The version bump to perform"
+        required: true
+        type: choice
+        default: patch
+        options:
+          - patch
+          - minor
+          - major
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Build Protokollant
+        run: |
+          cargo build
+          echo $PWD/target/debug >> $GITHUB_PATH
+
+      - name: Bump version
+        id: bump
+        run: echo "version=$(protokollant ${{ inputs.bump }})" >> $GITHUB_OUTPUT
+
+      - name: Git tag and push
+        uses: stefanzweifel/git-auto-commit-action@v4
+        with:
+          commit_message: "release: ${{ steps.bump.outputs.version }}"
+          tagging_message: ${{ steps.bump.outputs.version }}
+
+      - name: Create draft release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ steps.bump.outputs.version }}
+          release_name: ${{ steps.bump.outputs.version }}
+          draft: true
+          prerelease: false
+
+      - name: Build linux-amd64 binary
+        run: cargo build --release
+
+      - name: Upload linux-amd64 binary
+        uses: actions/upload-release-asset@v1.0.1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./target/release/protokollant
+          asset_name: protokollant-linux-amd64
+          asset_content_type: application/x-pie-executable
+
+      - name: Publish release
+        uses: eregon/publish-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          release_id: ${{ steps.create_release.outputs.id }}
