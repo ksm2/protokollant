@@ -22,7 +22,7 @@ struct Args {
     #[arg(value_enum)]
     change: Change,
 
-    #[arg(long)]
+    #[arg(long, help = "Print all changes to stdout and exit")]
     diff: bool,
 
     #[arg(long, help = "Create an unreleased section")]
