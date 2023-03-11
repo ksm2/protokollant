@@ -1,5 +1,5 @@
 use clap::ValueEnum;
-use semver::Version as SemVer;
+use semver::{Prerelease, Version as SemVer};
 use std::fmt::{Debug, Display, Formatter};
 use time::{Date, OffsetDateTime};
 
@@ -8,6 +8,7 @@ pub enum Change {
     Major,
     Minor,
     Patch,
+    NextIteration,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Default)]
@@ -56,6 +57,20 @@ impl Changelog {
             Change::Major => SemVer::new(version.major + 1, 0, 0),
             Change::Minor => SemVer::new(version.major, version.minor + 1, 0),
             Change::Patch => SemVer::new(version.major, version.minor, version.patch + 1),
+            Change::NextIteration => {
+                let mut next = SemVer::new(version.major, version.minor, version.patch + 1);
+                if version.pre.is_empty() {
+                    next.pre = Prerelease::new("next.0").unwrap();
+                } else {
+                    let pre = version.pre.as_str();
+                    let mut split = pre.rsplit('.');
+                    let pre_index = split.next().unwrap().parse::<u64>().unwrap() + 1;
+                    let pre_tag = split.next().unwrap();
+
+                    next.pre = Prerelease::new(&format!("{pre_tag}.{pre_index}")).unwrap();
+                }
+                next
+            }
         }
     }
 
