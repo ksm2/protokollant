@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Support more platforms: windows, macOS Intel and Silicon
 - Add flag to add unreleased section
 - Start next iteration using `next-iteration`
+- Skip modifying changelog using `--no-changelog`
 
 ### Fixed
 

@@ -8,7 +8,7 @@ pub enum Change {
     Major,
     Minor,
     Patch,
-    NextIteration,
+    Prerelease,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Default)]
@@ -27,10 +27,9 @@ impl Changelog {
         }
     }
 
-    pub fn bump(&mut self, change: Change) -> bool {
+    pub fn bump(&mut self, new_version: &SemVer) -> bool {
         if let Some(latest_version) = self.version() {
             if let Some(unreleased) = self.unreleased() {
-                let new_version = Self::bump_version(&latest_version, change);
                 unreleased.version = Version::Released(new_version.clone());
                 unreleased.date = Some(OffsetDateTime::now_local().unwrap().date());
 
@@ -50,28 +49,6 @@ impl Changelog {
             }
         }
         false
-    }
-
-    fn bump_version(version: &SemVer, change: Change) -> SemVer {
-        match change {
-            Change::Major => SemVer::new(version.major + 1, 0, 0),
-            Change::Minor => SemVer::new(version.major, version.minor + 1, 0),
-            Change::Patch => SemVer::new(version.major, version.minor, version.patch + 1),
-            Change::NextIteration => {
-                let mut next = SemVer::new(version.major, version.minor, version.patch + 1);
-                if version.pre.is_empty() {
-                    next.pre = Prerelease::new("next.0").unwrap();
-                } else {
-                    let pre = version.pre.as_str();
-                    let mut split = pre.rsplit('.');
-                    let pre_index = split.next().unwrap().parse::<u64>().unwrap() + 1;
-                    let pre_tag = split.next().unwrap();
-
-                    next.pre = Prerelease::new(&format!("{pre_tag}.{pre_index}")).unwrap();
-                }
-                next
-            }
-        }
     }
 
     pub fn version(&self) -> Option<SemVer> {
@@ -134,5 +111,134 @@ pub struct Ref {
 impl Ref {
     pub fn new(anchor: String, href: String) -> Self {
         Self { anchor, href }
+    }
+}
+
+pub trait Bump {
+    fn bump(&self, change: Change) -> Self;
+}
+
+impl Bump for SemVer {
+    fn bump(&self, change: Change) -> Self {
+        match change {
+            Change::Major => {
+                if self.pre.is_empty() || self.minor > 0 || self.patch > 0 {
+                    SemVer::new(self.major + 1, 0, 0)
+                } else {
+                    SemVer::new(self.major, 0, 0)
+                }
+            }
+            Change::Minor => {
+                if self.pre.is_empty() || self.patch > 0 {
+                    SemVer::new(self.major, self.minor + 1, 0)
+                } else {
+                    SemVer::new(self.major, self.minor, 0)
+                }
+            }
+            Change::Patch => {
+                if self.pre.is_empty() {
+                    SemVer::new(self.major, self.minor, self.patch + 1)
+                } else {
+                    SemVer::new(self.major, self.minor, self.patch)
+                }
+            }
+            Change::Prerelease => {
+                if self.pre.is_empty() {
+                    let mut next = SemVer::new(self.major, self.minor, self.patch + 1);
+                    next.pre = Prerelease::new("next.0").unwrap();
+                    next
+                } else {
+                    let mut next = SemVer::new(self.major, self.minor, self.patch);
+                    let pre = self.pre.as_str();
+                    let mut split = pre.rsplit('.');
+                    let pre_index = split.next().unwrap().parse::<u64>().unwrap() + 1;
+                    let pre_tag = split.next().unwrap();
+
+                    next.pre = Prerelease::new(&format!("{pre_tag}.{pre_index}")).unwrap();
+                    next
+                }
+            }
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn bump_major() {
+        let v_act = SemVer::parse("1.2.3").unwrap();
+        let v_exp = SemVer::parse("2.0.0").unwrap();
+        assert_eq!(v_act.bump(Change::Major), v_exp);
+
+        let v_act = SemVer::parse("0.0.0").unwrap();
+        let v_exp = SemVer::parse("1.0.0").unwrap();
+        assert_eq!(v_act.bump(Change::Major), v_exp);
+
+        let v_act = SemVer::parse("1.0.0-next.0").unwrap();
+        let v_exp = SemVer::parse("1.0.0").unwrap();
+        assert_eq!(v_act.bump(Change::Major), v_exp);
+
+        let v_act = SemVer::parse("1.0.1-next.0").unwrap();
+        let v_exp = SemVer::parse("2.0.0").unwrap();
+        assert_eq!(v_act.bump(Change::Major), v_exp);
+
+        let v_act = SemVer::parse("1.1.0-next.0").unwrap();
+        let v_exp = SemVer::parse("2.0.0").unwrap();
+        assert_eq!(v_act.bump(Change::Major), v_exp);
+    }
+
+    #[test]
+    fn bump_minor() {
+        let v_act = SemVer::parse("1.2.3").unwrap();
+        let v_exp = SemVer::parse("1.3.0").unwrap();
+        assert_eq!(v_act.bump(Change::Minor), v_exp);
+
+        let v_act = SemVer::parse("0.0.0").unwrap();
+        let v_exp = SemVer::parse("0.1.0").unwrap();
+        assert_eq!(v_act.bump(Change::Minor), v_exp);
+
+        let v_act = SemVer::parse("1.0.1-next.0").unwrap();
+        let v_exp = SemVer::parse("1.1.0").unwrap();
+        assert_eq!(v_act.bump(Change::Minor), v_exp);
+
+        let v_act = SemVer::parse("1.0.0-next.0").unwrap();
+        let v_exp = SemVer::parse("1.0.0").unwrap();
+        assert_eq!(v_act.bump(Change::Minor), v_exp);
+
+        let v_act = SemVer::parse("1.1.0-next.0").unwrap();
+        let v_exp = SemVer::parse("1.1.0").unwrap();
+        assert_eq!(v_act.bump(Change::Minor), v_exp);
+    }
+
+    #[test]
+    fn bump_patch() {
+        let v_act = SemVer::parse("1.2.3").unwrap();
+        let v_exp = SemVer::parse("1.2.4").unwrap();
+        assert_eq!(v_act.bump(Change::Patch), v_exp);
+
+        let v_act = SemVer::parse("0.0.0").unwrap();
+        let v_exp = SemVer::parse("0.0.1").unwrap();
+        assert_eq!(v_act.bump(Change::Patch), v_exp);
+
+        let v_act = SemVer::parse("1.0.1-next.0").unwrap();
+        let v_exp = SemVer::parse("1.0.1").unwrap();
+        assert_eq!(v_act.bump(Change::Patch), v_exp);
+    }
+
+    #[test]
+    fn bump_prerelease() {
+        let v_act = SemVer::parse("1.2.3").unwrap();
+        let v_exp = SemVer::parse("1.2.4-next.0").unwrap();
+        assert_eq!(v_act.bump(Change::Prerelease), v_exp);
+
+        let v_act = SemVer::parse("0.0.0").unwrap();
+        let v_exp = SemVer::parse("0.0.1-next.0").unwrap();
+        assert_eq!(v_act.bump(Change::Prerelease), v_exp);
+
+        let v_act = SemVer::parse("1.0.1-next.0").unwrap();
+        let v_exp = SemVer::parse("1.0.1-next.1").unwrap();
+        assert_eq!(v_act.bump(Change::Prerelease), v_exp);
     }
 }

@@ -10,7 +10,7 @@ mod parser;
 use crate::diff::{diff_files, FileDiff};
 use crate::generate::generate_str;
 use crate::manifests::detect_manifests;
-use crate::model::{Change, Release};
+use crate::model::{Bump, Change, Release};
 use crate::parser::parse_str;
 use clap::Parser;
 use std::fs::{read_to_string, write};
@@ -27,6 +27,9 @@ struct Args {
 
     #[arg(long, help = "Create an unreleased section")]
     unreleased: bool,
+
+    #[arg(long, help = "Skip modifying the changelog")]
+    no_changelog: bool,
 }
 
 fn main() -> Result<()> {
@@ -39,12 +42,14 @@ fn main() -> Result<()> {
         changelog.releases.insert(0, Release::default());
     }
 
+    let old_version = changelog.version().expect("changelog to have version");
+    let new_version = old_version.bump(args.change);
+
     let mut diffs = Vec::<FileDiff>::new();
-    let bumped = changelog.bump(args.change);
+    let bumped = args.no_changelog || changelog.bump(&new_version);
     if !bumped {
         eprintln!("No changes to release");
     } else {
-        let new_version = changelog.version().unwrap();
         eprintln!("Releasing new version {}", new_version);
 
         let manifest_types = detect_manifests()?;
@@ -71,8 +76,6 @@ fn main() -> Result<()> {
 
     if bumped && !args.diff {
         write("CHANGELOG.md", &new_str)?;
-
-        let new_version = changelog.version().unwrap();
         println!("v{}", new_version);
     }
 
