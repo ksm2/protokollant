@@ -79,11 +79,86 @@ jobs:
           asset_name: protokollant-${{ needs.release.outputs.version }}-linux-amd64.tar.gz
           asset_content_type: application/tar+gzip
 
+  darwin-arm64:
+    runs-on: macos-latest
+    needs: release
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Build darwin-arm64 binary
+        run: cargo build --release --target=aarch64-apple-darwin
+
+      - name: Archive
+        working-directory: target/aarch64-apple-darwin/release
+        run: tar czf protokollant-${{ needs.release.outputs.version }}-darwin-arm64.tar.gz protokollant
+
+      - name: Upload darwin-arm64 binary
+        uses: actions/upload-release-asset@v1.0.1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.release.outputs.upload_url }}
+          asset_path: ./target/aarch64-apple-darwin/release/protokollant-${{ needs.release.outputs.version }}-darwin-arm64.tar.gz
+          asset_name: protokollant-${{ needs.release.outputs.version }}-darwin-arm64.tar.gz
+          asset_content_type: application/tar+gzip
+
+  darwin-amd64:
+    runs-on: macos-latest
+    needs: release
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Build darwin-amd64 binary
+        run: cargo build --release --target=x86_64-apple-darwin
+
+      - name: Archive
+        working-directory: target/x86_64-apple-darwin/release
+        run: tar czf protokollant-${{ needs.release.outputs.version }}-darwin-amd64.tar.gz protokollant
+
+      - name: Upload darwin-amd64 binary
+        uses: actions/upload-release-asset@v1.0.1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.release.outputs.upload_url }}
+          asset_path: ./target/x86_64-apple-darwin/release/protokollant-${{ needs.release.outputs.version }}-darwin-amd64.tar.gz
+          asset_name: protokollant-${{ needs.release.outputs.version }}-darwin-amd64.tar.gz
+          asset_content_type: application/tar+gzip
+
+  windows-amd64:
+    runs-on: windows-latest
+    needs: release
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Build windows-amd64 binary
+        run: cargo build --release
+
+      - name: Archive
+        working-directory: target/release
+        run: tar czf protokollant-${{ needs.release.outputs.version }}-windows-amd64.tar.gz protokollant
+
+      - name: Upload windows-amd64 binary
+        uses: actions/upload-release-asset@v1.0.1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.release.outputs.upload_url }}
+          asset_path: ./target/release/protokollant-${{ needs.release.outputs.version }}-windows-amd64.tar.gz
+          asset_name: protokollant-${{ needs.release.outputs.version }}-windows-amd64.tar.gz
+          asset_content_type: application/tar+gzip
+
   publish:
     runs-on: ubuntu-latest
     needs:
       - release
       - linux-amd64
+      - darwin-arm64
+      - darwin-amd64
+      - windows-amd64
     steps:
       - name: Publish release
         uses: eregon/publish-release@v1
