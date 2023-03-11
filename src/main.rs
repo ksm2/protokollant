@@ -10,7 +10,7 @@ mod parser;
 use crate::diff::{diff_files, FileDiff};
 use crate::generate::generate_str;
 use crate::manifests::detect_manifests;
-use crate::model::Change;
+use crate::model::{Change, Release};
 use crate::parser::parse_str;
 use clap::Parser;
 use std::fs::{read_to_string, write};
@@ -24,6 +24,9 @@ struct Args {
 
     #[arg(long)]
     diff: bool,
+
+    #[arg(long, help = "Create an unreleased section")]
+    unreleased: bool,
 }
 
 fn main() -> Result<()> {
@@ -31,6 +34,10 @@ fn main() -> Result<()> {
 
     let changelog_str = read_to_string("CHANGELOG.md")?;
     let mut changelog = parse_str(&changelog_str);
+
+    if args.unreleased && !changelog.has_unreleased() {
+        changelog.releases.insert(0, Release::default());
+    }
 
     let mut diffs = Vec::<FileDiff>::new();
     let bumped = changelog.bump(args.change);

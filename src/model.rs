@@ -70,6 +70,12 @@ impl Changelog {
             .cloned()
     }
 
+    pub fn has_unreleased(&self) -> bool {
+        self.releases
+            .iter()
+            .any(|rel| rel.version == Version::Unreleased)
+    }
+
     pub fn unreleased(&mut self) -> Option<&mut Release> {
         self.releases
             .iter_mut()
