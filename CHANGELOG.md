@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Support more platforms: windows, macOS Intel and Silicon
 
+### Fixed
+
+- Bump `Cargo.lock` on release
+
 ## [0.2.0] - 2023-03-09
 
 ### Added

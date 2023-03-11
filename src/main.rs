@@ -32,7 +32,7 @@ fn main() -> Result<()> {
     let changelog_str = read_to_string("CHANGELOG.md")?;
     let mut changelog = parse_str(&changelog_str);
 
-    let mut diffs = Vec::new();
+    let mut diffs = Vec::<FileDiff>::new();
     let bumped = changelog.bump(args.change);
     if !bumped {
         eprintln!("No changes to release");
@@ -43,8 +43,10 @@ fn main() -> Result<()> {
         let manifest_types = detect_manifests()?;
         for manifest_type in manifest_types {
             eprintln!("Detected {}", manifest_type);
-            let diff = manifest_type.change_version(&new_version, !args.diff)?;
-            diffs.push(diff);
+            let manifest_diffs = manifest_type.change_version(&new_version, !args.diff)?;
+            for diff in manifest_diffs {
+                diffs.push(diff);
+            }
         }
     }
 
