@@ -87,30 +87,42 @@ jobs:
           asset_name: protokollant-${{ needs.release.outputs.version }}-linux-amd64.tar.gz
           asset_content_type: application/tar+gzip
 
-  darwin_amd64:
+  darwin:
     runs-on: macos-latest
     needs: release
+    strategy:
+      matrix:
+        include:
+          - target: x86_64-apple-darwin
+            platform: amd64
+          - target: aarch64-apple-darwin
+            platform: arm64
+
     steps:
       - name: Checkout
         uses: actions/checkout@v3
         with:
           ref: ${{ needs.release.outputs.version }}
 
-      - name: Build darwin-amd64 binary
-        run: cargo build --release --target=x86_64-apple-darwin
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          target: ${{ matrix.target }}
+
+      - name: Build binary
+        run: cargo build --release --target=${{ matrix.target }}
 
       - name: Archive
-        working-directory: target/x86_64-apple-darwin/release
-        run: tar czf protokollant-${{ needs.release.outputs.version }}-darwin-amd64.tar.gz protokollant
+        working-directory: target/${{ matrix.target }}/release
+        run: tar czf protokollant-${{ needs.release.outputs.version }}-darwin-${{ matrix.platform }}.tar.gz protokollant
 
-      - name: Upload darwin-amd64 binary
+      - name: Upload binary
         uses: actions/upload-release-asset@v1.0.1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ needs.release.outputs.upload_url }}
-          asset_path: ./target/x86_64-apple-darwin/release/protokollant-${{ needs.release.outputs.version }}-darwin-amd64.tar.gz
-          asset_name: protokollant-${{ needs.release.outputs.version }}-darwin-amd64.tar.gz
+          asset_path: ./target/${{ matrix.target }}/release/protokollant-${{ needs.release.outputs.version }}-darwin-${{ matrix.platform }}.tar.gz
+          asset_name: protokollant-${{ needs.release.outputs.version }}-darwin-${{ matrix.platform }}.tar.gz
           asset_content_type: application/tar+gzip
 
   windows_amd64:
@@ -145,7 +157,7 @@ jobs:
     needs:
       - release
       - linux_amd64
-      - darwin_amd64
+      - darwin
       - windows_amd64
     steps:
       - name: Publish release
