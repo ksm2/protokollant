@@ -59,45 +59,34 @@ jobs:
           draft: true
           prerelease: false
 
-  linux_amd64:
-    runs-on: ubuntu-latest
+  build:
     needs: release
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-        with:
-          ref: ${{ needs.release.outputs.version }}
 
-      - uses: actions-rust-lang/setup-rust-toolchain@v1
-
-      - name: Build linux-amd64 binary
-        run: cargo build --release
-
-      - name: Archive
-        working-directory: target/release
-        run: tar czf protokollant-${{ needs.release.outputs.version }}-linux-amd64.tar.gz protokollant
-
-      - name: Upload linux-amd64 binary
-        uses: actions/upload-release-asset@v1.0.1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ needs.release.outputs.upload_url }}
-          asset_path: ./target/release/protokollant-${{ needs.release.outputs.version }}-linux-amd64.tar.gz
-          asset_name: protokollant-${{ needs.release.outputs.version }}-linux-amd64.tar.gz
-          asset_content_type: application/tar+gzip
-
-  darwin:
-    runs-on: macos-latest
-    needs: release
     strategy:
       matrix:
         include:
-          - target: x86_64-apple-darwin
-            platform: amd64
-          - target: aarch64-apple-darwin
-            platform: arm64
+          - runs-on: ubuntu-latest
+            target: 'x86_64-unknown-linux-gnu'
+            os: 'linux'
+            platform: 'amd64'
+            archive: 'tar.gz'
+          - runs-on: macos-latest
+            target: 'x86_64-apple-darwin'
+            os: 'darwin'
+            platform: 'amd64'
+            archive: 'tar.gz'
+          - runs-on: macos-latest
+            target: 'aarch64-apple-darwin'
+            os: 'darwin'
+            platform: 'arm64'
+            archive: 'tar.gz'
+          - runs-on: windows-latest
+            target: 'x86_64-pc-windows-msvc'
+            os: 'windows'
+            platform: 'amd64'
+            archive: 'zip'
 
+    runs-on: ${{ matrix.runs-on }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -109,11 +98,16 @@ jobs:
           target: ${{ matrix.target }}
 
       - name: Build binary
-        run: cargo build --release --target=${{ matrix.target }}
+        run: cargo build --release --target ${{ matrix.target }}
 
-      - name: Archive
-        working-directory: target/${{ matrix.target }}/release
-        run: tar czf protokollant-${{ needs.release.outputs.version }}-darwin-${{ matrix.platform }}.tar.gz protokollant
+      - name: Produce archive
+        id: archive
+        uses: ksm2/archive-action@v1
+        with:
+          root-directory: target/${{ matrix.target }}/release
+          format: ${{ matrix.archive }}
+          name: protokollant-${{ needs.release.outputs.version }}-${{ matrix.os }}-${{ matrix.platform }}
+          include: 'protokollant?(.exe)'
 
       - name: Upload binary
         uses: actions/upload-release-asset@v1.0.1
@@ -121,44 +115,15 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ needs.release.outputs.upload_url }}
-          asset_path: ./target/${{ matrix.target }}/release/protokollant-${{ needs.release.outputs.version }}-darwin-${{ matrix.platform }}.tar.gz
-          asset_name: protokollant-${{ needs.release.outputs.version }}-darwin-${{ matrix.platform }}.tar.gz
-          asset_content_type: application/tar+gzip
-
-  windows_amd64:
-    runs-on: windows-latest
-    needs: release
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-        with:
-          ref: ${{ needs.release.outputs.version }}
-
-      - name: Build windows-amd64 binary
-        run: cargo build --release
-
-      - name: Archive
-        working-directory: target\release
-        shell: pwsh
-        run: Compress-Archive -DestinationPath protokollant-${{ needs.release.outputs.version }}-windows-amd64.zip -LiteralPath protokollant.exe
-
-      - name: Upload windows-amd64 binary
-        uses: actions/upload-release-asset@v1.0.1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ needs.release.outputs.upload_url }}
-          asset_path: .\target\release\protokollant-${{ needs.release.outputs.version }}-windows-amd64.zip
-          asset_name: protokollant-${{ needs.release.outputs.version }}-windows-amd64.zip
-          asset_content_type: application/zip
+          asset_path: ${{ steps.archive.outputs.path }}
+          asset_name: ${{ steps.archive.outputs.name }}
+          asset_content_type: ${{ steps.archive.outputs.media-type }}
 
   publish:
     runs-on: ubuntu-latest
     needs:
       - release
-      - linux_amd64
-      - darwin
-      - windows_amd64
+      - build
     steps:
       - name: Publish release
         uses: eregon/publish-release@v1
