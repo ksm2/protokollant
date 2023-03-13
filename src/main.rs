@@ -3,12 +3,14 @@ extern crate pest_derive;
 
 mod diff;
 mod generate;
+mod json;
 mod manifests;
 mod model;
 mod parser;
 
 use crate::diff::{diff_files, FileDiff};
 use crate::generate::generate_str;
+use crate::json::Json;
 use crate::manifests::detect_manifests;
 use crate::model::{Bump, Change, Release};
 use crate::parser::parse_str;
@@ -24,6 +26,9 @@ struct Args {
 
     #[arg(long, help = "Whether to force using color")]
     color: bool,
+
+    #[arg(long, help = "Print JSON output")]
+    json: bool,
 
     #[arg(long, help = "Print all changes to stdout and exit")]
     diff: bool,
@@ -55,13 +60,19 @@ fn main() -> Result<()> {
     let mut diffs = Vec::<FileDiff>::new();
     let bumped = args.no_changelog || changelog.bump(&new_version);
     if !bumped {
-        eprintln!("No changes to release");
+        if !args.json {
+            eprintln!("No changes to release");
+        }
     } else {
-        eprintln!("Releasing new version {}", new_version);
+        if !args.json {
+            eprintln!("Releasing new version {}", new_version);
+        }
 
         let manifest_types = detect_manifests()?;
         for manifest_type in manifest_types {
-            eprintln!("Detected {}", manifest_type);
+            if !args.json {
+                eprintln!("Detected {}", manifest_type);
+            }
             let manifest_diffs = manifest_type.change_version(&new_version, !args.diff)?;
             for diff in manifest_diffs {
                 diffs.push(diff);
@@ -74,7 +85,7 @@ fn main() -> Result<()> {
     let file_diff = FileDiff::new("CHANGELOG.md", changelog_str, new_str.clone());
     diffs.push(file_diff);
 
-    let mut writer: Box<dyn Write> = if args.diff {
+    let mut writer: Box<dyn Write> = if args.diff && !args.json {
         Box::new(stdout())
     } else {
         Box::new(stderr())
@@ -83,7 +94,18 @@ fn main() -> Result<()> {
 
     if bumped && !args.diff {
         write("CHANGELOG.md", &new_str)?;
-        println!("v{}", new_version);
+        if !args.json {
+            println!("v{}", new_version);
+        }
+    }
+
+    if args.json {
+        let json = Json {
+            version: new_version.to_string(),
+            previous_version: old_version.to_string(),
+            bump: bumped,
+        };
+        println!("{}", json.to_string());
     }
 
     if !bumped {
