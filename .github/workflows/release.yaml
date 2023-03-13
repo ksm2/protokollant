@@ -31,12 +31,11 @@ jobs:
         with:
           ref: 'main'
 
-      - name: Setup Protokollant
-        uses: ksm2/setup-protokollant-action@v1
-
       - name: Bump version
         id: bump
-        run: echo "version=$(protokollant ${{ inputs.bump }})" >> $GITHUB_OUTPUT
+        uses: ksm2/protokollant-action@v1
+        with:
+          bump: ${{ inputs.bump }}
 
       - name: Git tag and push
         uses: stefanzweifel/git-auto-commit-action@v4
@@ -137,11 +136,12 @@ jobs:
         with:
           ref: 'main'
 
-      - name: Setup Protokollant
-        uses: ksm2/setup-protokollant-action@v1
-
       - name: Next iteration
-        run: protokollant prerelease --unreleased --no-changelog
+        uses: ksm2/protokollant-action@v1
+        with:
+          bump: prerelease
+          unreleased: true
+          changelog: false
 
       - name: Git push
         uses: stefanzweifel/git-auto-commit-action@v4
