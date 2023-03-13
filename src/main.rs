@@ -22,6 +22,9 @@ struct Args {
     #[arg(value_enum)]
     change: Change,
 
+    #[arg(long, help = "Whether to force using color")]
+    color: bool,
+
     #[arg(long, help = "Print all changes to stdout and exit")]
     diff: bool,
 
@@ -34,6 +37,10 @@ struct Args {
 
 fn main() -> Result<()> {
     let args = Args::parse();
+
+    if args.color {
+        colored::control::set_override(true);
+    }
 
     let changelog_str = read_to_string("CHANGELOG.md")?;
     let mut changelog = parse_str(&changelog_str);
