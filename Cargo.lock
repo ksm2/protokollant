@@ -364,7 +364,7 @@ dependencies = [
 
 [[package]]
 name = "protokollant"
-version = "0.5.1-next.0"
+version = "0.5.1"
 dependencies = [
  "clap",
  "colored",
