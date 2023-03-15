@@ -21,7 +21,7 @@ jobs:
     runs-on: ubuntu-latest
 
     outputs:
-      version: ${{ steps.bump.outputs.version }}
+      version: "v${{ steps.bump.outputs.version }}"
       id: ${{ steps.create_release.outputs.id }}
       upload_url: ${{ steps.create_release.outputs.upload_url }}
 
@@ -41,7 +41,7 @@ jobs:
         uses: stefanzweifel/git-auto-commit-action@v4
         with:
           commit_message: "release: ${{ steps.bump.outputs.version }}"
-          tagging_message: ${{ steps.bump.outputs.version }}
+          tagging_message: "v${{ steps.bump.outputs.version }}"
 
       - name: Create draft release
         id: create_release
@@ -49,8 +49,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: ${{ steps.bump.outputs.version }}
-          release_name: ${{ steps.bump.outputs.version }}
+          tag_name: "v${{ steps.bump.outputs.version }}"
+          release_name: "v${{ steps.bump.outputs.version }}"
           draft: true
           prerelease: false
 
